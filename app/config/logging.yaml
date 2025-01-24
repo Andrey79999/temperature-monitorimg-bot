@@ -1,0 +1,25 @@
+version: 1
+disable_existing_loggers: False
+formatters:
+    simple:
+        format: "%(asctime)s|%(name)s|%(levelname)s|%(message)s"
+        datefmt: "%Y-%m-%d %H:%M:%S"
+
+handlers:
+    file:
+        class: logging.handlers.RotatingFileHandler
+        filename: ./logs/temperature-monitoring-bot.log
+        formatter: simple
+        maxBytes: 2097152
+        backupCount: 5
+
+loggers:
+    myapp:
+        level: DEBUG
+        handlers: [file]
+        propagate: False
+
+root:
+    level: INFO
+    handlers: [file]
+

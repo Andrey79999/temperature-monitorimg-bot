@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    logging:
+      options:
+        max-size: 1m
+  temperature-bot:
+    build: .
+    devices:
+        - "class/{4d36e978-e325-11ce-bfc1-08002be10318}"
+    volumes:
+      - ./app/logs:/app/logs
+      # - "//./COM4:/dev/ttyS4"
+    tty: true
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - ADMIN_ID=${ADMIN_ID}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      options:
+        max-size: 1m
+
+volumes:
+  postgres_data:
