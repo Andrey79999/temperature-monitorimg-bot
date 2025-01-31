@@ -38,18 +38,21 @@ def serial_ports():
 async def read_and_save_sensor_data():
     # ports = serial_ports()
     # ser = serial.Serial(ports[1], 9600)
-    try:
-        ser = serial.Serial('COM4', 9600)
-        response = ser.readline()
-        decoded_response = response.decode('utf-8')
-        temperature = float(decoded_response.split('Температура:')[1].split(';')[0])
-        humidity = float(decoded_response.split('Влажность:')[1])
-        ser.close()
-        await pg_db.save_sensor_data(temperature, humidity)
-    except Exception as e:
-        logger.error(f"Read sensor data error: {e}")
-        temperature = None
-        humidity = None
+    max_retry = 5
+    for _ in range(max_retry):
+        try:
+            with serial.Serial('COM4', 9600, timeout=2) as ser:
+                response = ser.readline()
+                decoded_response = response.decode('utf-8', errors='ignore')
+                temperature = float(decoded_response.split('Температура:')[1].split(';')[0])
+                humidity = float(decoded_response.split('Влажность:')[1])
+                await pg_db.save_sensor_data(temperature, humidity)
+        except Exception as e:
+            logger.error(f"Read sensor data error: {e}")
+            temperature = None
+            humidity = None
+        if temperature is not None and humidity is not None:
+            break
     return {'temperature': temperature, 'humidity': humidity}
 
 async def check_notifications():
