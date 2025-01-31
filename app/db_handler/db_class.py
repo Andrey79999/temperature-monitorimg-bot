@@ -27,7 +27,7 @@ class PostgresHandler:
             await conn.execute('''
                 CREATE TABLE IF NOT EXISTS sensor_data (
                     id SERIAL PRIMARY KEY,
-                    timestamp TIMESTAMP DEFAULT NOW(),
+                    timestamp TIMESTAMP WITHOUT TIME ZONE,
                     temperature FLOAT,
                     humidity FLOAT
                 )
@@ -40,12 +40,12 @@ class PostgresHandler:
                 VALUES ($1, $2)
             ''', temperature, humidity)
 
-    async def create_user(self, user_id: int, username: str):
+    async def create_user(self, user_id: int, username: str, active: bool = False):
         await self.pool.execute('''
-            INSERT INTO users (user_id, username) 
-            VALUES ($1, $2)
+            INSERT INTO users (user_id, username, active) 
+            VALUES ($1, $2, $3)
             ON CONFLICT (user_id) DO NOTHING
-        ''', user_id, username)
+        ''', user_id, username, active)
     
     async def get_user(self, user_id: int):
         return await self.pool.fetchrow('SELECT * FROM users WHERE user_id = $1', user_id)

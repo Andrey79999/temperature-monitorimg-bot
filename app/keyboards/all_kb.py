@@ -1,50 +1,38 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 from create_bot import admins
-
-
-class KeyBoardText:
-    profile = '👤 Профиль'
-    end_cont = 'Температура'
-    start_cont = 'График температуры'
-    status = 'Статус'
-    admin = '⚙️ Админ панель'
-    all_users = 'Посмотреть всех пользователей'
-    inactive_users = 'Посмотреть не активированных пользователей'
-    back = 'назад'
-
+from locales.texts import Texts
 
 def main_kb(user_telegram_id: int):
     kb_list = [
-        [KeyboardButton(text=KeyBoardText.start_cont), KeyboardButton(text=KeyBoardText.end_cont)],
-        [KeyboardButton(text=KeyBoardText.status), KeyboardButton(text=KeyBoardText.profile)]
+        [KeyboardButton(text=Texts.BTN_TEMPERATURE_GRAPH), KeyboardButton(text=Texts.BTN_TEMPERATURE)],
+        [KeyboardButton(text=Texts.BTN_STATUS), KeyboardButton(text=Texts.BTN_PROFILE)]
     ]
     if user_telegram_id in admins:
-        kb_list.append([KeyboardButton(text=KeyBoardText.admin)])
-    keyboard = ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=True)
-    return keyboard
+        kb_list.append([KeyboardButton(text=Texts.BTN_ADMIN_PANEL)])
+    return ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=True)
 
-
-def admin_kb(user_telegram_id: int):
-    if user_telegram_id in admins:
-        kb_list = [[KeyboardButton(text=KeyBoardText.all_users), KeyboardButton(text=KeyBoardText.inactive_users)],
-                   [KeyboardButton(text=KeyBoardText.back)]]
-        keyboard = ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=True)
-        return keyboard
-
+def admin_kb():
+    kb_list = [
+        [KeyboardButton(text=Texts.BTN_ALL_USERS), KeyboardButton(text=Texts.BTN_INACTIVE_USERS)],
+        [KeyboardButton(text=Texts.BTN_BACK)]
+    ]
+    return ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=True)
 
 def back_kb():
-    kb_list = [
-        [KeyboardButton(text=KeyBoardText.back)]
-    ]
-    keyboard = ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=True)
-    return keyboard
-
+    return ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=Texts.BTN_BACK)]], resize_keyboard=True)
 
 def user_list_kb(users, prefix):
     kb_list = []
-    for user_id, user_data in users.items():
-        kb_list.append([InlineKeyboardButton(
-            text=user_data['username'],
-            callback_data=str(user_id) + prefix)]
-        )
+    for user in users[0]:
+        if user:
+            user = user
+            kb_list.append([InlineKeyboardButton(
+                text=user.get('username'),
+                callback_data=str(user.get('user_id')) + prefix)]
+            )
     return InlineKeyboardMarkup(inline_keyboard=kb_list)
+
+def period_kb():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=k, callback_data=f'period_{v}')] for k, v in Texts.PERIODS.items()
+    ])

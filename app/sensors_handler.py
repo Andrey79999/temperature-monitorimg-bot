@@ -2,6 +2,8 @@ import serial
 import sys
 from create_bot import pg_db
 import glob
+from config.logging_config import logger
+
 
 def serial_ports():
     """ Lists serial port names
@@ -34,16 +36,20 @@ def serial_ports():
    
     
 async def read_and_save_sensor_data():
-    ports = serial_ports()
-    print(ports)
-    ser = serial.Serial(ports[0], 9600)
-    response = ser.readline()
-    decoded_response = response.decode('utf-8')
-    temperature = float(decoded_response.split('Температура:')[1].split(';')[0])
-    humidity = float(decoded_response.split('Влажность:')[1])
-    ser.close()
-    
-    await pg_db.save_sensor_data(temperature, humidity)
+    # ports = serial_ports()
+    # ser = serial.Serial(ports[1], 9600)
+    try:
+        ser = serial.Serial('COM4', 9600)
+        response = ser.readline()
+        decoded_response = response.decode('utf-8')
+        temperature = float(decoded_response.split('Температура:')[1].split(';')[0])
+        humidity = float(decoded_response.split('Влажность:')[1])
+        ser.close()
+        await pg_db.save_sensor_data(temperature, humidity)
+    except Exception as e:
+        logger.error(f"Read sensor data error: {e}")
+        temperature = None
+        humidity = None
     return {'temperature': temperature, 'humidity': humidity}
 
 async def check_notifications():
@@ -57,3 +63,14 @@ async def check_notifications():
                 user['user_id'],
                 f"⚠️ Превышены пределы: Температура {latest['temperature']}°C, Влажность {latest['humidity']}%"
             )
+
+
+async def test():
+    import asyncio
+    r = await asyncio.gather(read_and_save_sensor_data())
+    print(r)
+
+if __name__ == "__main__":
+    import asyncio
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(test())

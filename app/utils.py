@@ -8,3 +8,6 @@ async def user_activate(user_id: int):
 
 async def get_inactive_users():
     return await pg_db.pool.fetch('SELECT * FROM users WHERE NOT active')
+
+async def get_user_info(user_id: int):
+    return await pg_db.get_user(user_id)

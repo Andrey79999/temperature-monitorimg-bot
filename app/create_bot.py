@@ -14,7 +14,7 @@ from db_handler.db_class import PostgresHandler
 # pg_db = PostgresHandler(config('PG_LINK'))
 # scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
 
-load_dotenv()
+load_dotenv(override=True)
 
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 ADMIN_ID = int(os.getenv('ADMIN_ID'))
@@ -26,13 +26,35 @@ scheduler = AsyncIOScheduler(timezone='Asia/Novosibirsk')
 
 class UserCheckMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: Message, data):
-        user = await pg_db.get_user(event.from_user.id)
-        if not user or not user['active']:
-            await event.answer("❌ Доступ запрещен. Ожидайте активации администратором.")
-            return
-        return await handler(event, data)
+        if event.message is not None:
+            if event.message.text and event.message.text.startswith('/start'):
+                return await handler(event, data)
+        
+            user_id = event.message.from_user.id
+            if user_id in admins:
+                return await handler(event, data)
+                
+            user = await pg_db.get_user(user_id)
+            if not user or not user['active']:
+                await event.message.answer("❌ Доступ запрещен. Ожидайте активации администратором.")
+                return
+            else:
+                return await handler(event, data)
+        if event.callback_query is not None:
+            # print(event.callback_query)
+            # print(dir(event.callback_query))
+            user_id = event.callback_query.from_user.id
+            if user_id in admins:
+                return await handler(event, data)
+                
+            user = await pg_db.get_user(user_id)
+            if not user or not user['active']:
+                await event.callback_query.answer("❌ Доступ запрещен. Ожидайте активации администратором.")
+                return
+            else:
+                return await handler(event, data)
 
-
+print('start')
 bot = Bot(token=TELEGRAM_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 dp.update.middleware.register(UserCheckMiddleware())
