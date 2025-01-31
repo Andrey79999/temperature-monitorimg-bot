@@ -7,3 +7,4 @@ with open('./config/logging.yaml', 'r+') as f:
     logging.config.dictConfig(config)
 
 logger = logging.getLogger('temperature-monitoring-bot')
+logging.getLogger("apscheduler.executors.default").setLevel(logging.CRITICAL)
